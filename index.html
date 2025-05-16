@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Bouncing Balls</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+        }
+        #animationCanvas {
+            background-color: #ffffff;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .controls button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        .controls button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px 25px 25px 25px; /* Adjusted padding */
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 480px; /* Slightly wider modal */
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            text-align: left; /* Align labels and inputs to the left */
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        .modal-content .input-group {
+            margin-bottom: 15px;
+        }
+        .modal-content label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .modal-content input[type="number"],
+        .modal-content input[type="text"],
+        .modal-content input[type="range"] {
+            width: calc(100% - 18px); /* Full width minus padding */
+            padding: 9px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+        }
+        .modal-content input[type="range"] {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .modal-content .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .modal-content .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-content .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto; /* Override full width for checkbox */
+            transform: scale(1.2); /* Slightly larger checkbox */
+        }
+        .modal-content .button-group {
+            text-align: center;
+            margin-top: 25px;
+        }
+        .modal-content button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        .modal-apply-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .modal-apply-button:hover {
+            background-color: #218838;
+        }
+        .modal-music-button {
+            background-color: #17a2b8; /* Info Blue */
+            color: white;
+        }
+        .modal-music-button:hover {
+            background-color: #138496;
+        }
+        .modal-close-button {
+            background-color: #6c757d; /* Secondary Grey */
+            color: white;
+        }
+        .modal-close-button:hover {
+            background-color: #5a6268;
+        }
+        #musicUrl {
+            font-size: 0.85em; /* Smaller font for URL input */
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="animationCanvas"></canvas>
+
+<div class="controls">
+    <button id="startButton">Start</button>
+    <button id="stopButton" disabled>Stop</button>
+    <button id="resetButton">Randomize</button>
+    <button id="configButton">Configure (Space)</button> </div>
+
+<div id="ballConfigModal" class="modal">
+    <div class="modal-content">
+        <h2>Animation Settings</h2>
+
+        <div class="input-group">
+            <label for="numRedBalls">Red Balls (0-10):</label>
+            <input type="number" id="numRedBalls" name="numRedBalls" min="0" max="10" value="2">
+        </div>
+
+        <div class="input-group">
+            <label for="numBlackBalls">Black Balls (0-10):</label>
+            <input type="number" id="numBlackBalls" name="numBlackBalls" min="0" max="10" value="2">
+        </div>
+
+        <div class="input-group">
+            <label for="ballSizeRange">Ball Size (Radius: <span id="ballSizeValue">15</span>px):</label>
+            <input type="range" id="ballSizeRange" name="ballSizeRange" min="5" max="50" value="15">
+        </div>
+
+        <div class="input-group checkbox-group">
+            <input type="checkbox" id="collisionSoundToggle" name="collisionSoundToggle">
+            <label for="collisionSoundToggle" style="margin-bottom:0; font-weight:normal;">Play 'Boop' on Collision</label>
+        </div>
+
+        <div class="input-group">
+            <label for="musicUrl">Background Music URL (e.g., https://.../music.mp3):</label>
+            <input type="text" id="musicUrl" name="musicUrl" placeholder="Enter public music URL">
+             <small style="display:block; margin-top:3px; font-size:0.8em; color: #666;">Note: Direct local file paths (e.g., C:\...) won't work.</small>
+        </div>
+
+
+        <div class="button-group">
+            <button id="applyBallConfig" class="modal-apply-button">Apply & Restart</button>
+            <button id="toggleMusicButton" class="modal-music-button">Play Music</button>
+            <button id="closeModalButton" class="modal-close-button">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('animationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- DOM Elements ---
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const resetButton = document.getElementById('resetButton');
+    const configButton = document.getElementById('configButton'); // New button
+
+    // Modal elements
+    const ballConfigModal = document.getElementById('ballConfigModal');
+    const numRedBallsInput = document.getElementById('numRedBalls');
+    const numBlackBallsInput = document.getElementById('numBlackBalls');
+    const ballSizeRange = document.getElementById('ballSizeRange');
+    const ballSizeValueDisplay = document.getElementById('ballSizeValue');
+    const collisionSoundToggle = document.getElementById('collisionSoundToggle');
+    const musicUrlInput = document.getElementById('musicUrl');
+    const applyBallConfigButton = document.getElementById('applyBallConfig');
+    const toggleMusicButton = document.getElementById('toggleMusicButton');
+    const closeModalButton = document.getElementById('closeModalButton');
+
+    // --- Animation & Game State ---
+    let animationFrameId;
+    let balls = [];
+    let currentBallRadius = 15; // Default ball radius
+    let canvasWidth = window.innerWidth * 0.85;
+    let canvasHeight = window.innerHeight * 0.65;
+
+    canvasWidth = Math.max(300, Math.min(canvasWidth, 1200));
+    canvasHeight = Math.max(200, Math.min(canvasHeight, 800));
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+
+    let currentRedBalls = 2;
+    let currentBlackBalls = 2;
+    let collisionSoundEnabled = false;
+
+    // --- Audio ---
+    let audioPlayer = new Audio();
+    let isMusicPlaying = false;
+    let boopSynth; // Will be initialized after Tone.js is ready
+
+    // Initialize Tone.js synth safely
+    if (typeof Tone !== 'undefined') {
+        boopSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.05 }
+        }).toDestination();
+    } else {
+        console.warn("Tone.js not loaded. Collision sounds will be unavailable.");
+    }
+
+
+    /**
+     * Ball class
+     */
+    class Ball {
+        constructor(x, y, dx, dy, radius, color) {
+            this.x = x;
+            this.y = y;
+            this.dx = dx;
+            this.dy = dy;
+            this.radius = radius;
+            this.color = color;
+            this.mass = Math.PI * radius * radius; // Mass proportional to area for more realistic collisions
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        update() {
+            // Wall collision
+            let wallCollision = false;
+            if (this.x + this.radius + this.dx > canvas.width || this.x - this.radius + this.dx < 0) {
+                this.dx = -this.dx;
+                wallCollision = true;
+            }
+            if (this.y + this.radius + this.dy > canvas.height || this.y - this.radius + this.dy < 0) {
+                this.dy = -this.dy;
+                wallCollision = true;
+            }
+
+            if (wallCollision && collisionSoundEnabled && boopSynth) {
+                boopSynth.triggerAttackRelease("C4", "8n", Tone.now(), 0.3); // Slightly softer boop for walls
+            }
+
+            // Prevent sticking to walls
+            if (this.x + this.radius > canvas.width) this.x = canvas.width - this.radius;
+            if (this.x - this.radius < 0) this.x = this.radius;
+            if (this.y + this.radius > canvas.height) this.y = canvas.height - this.radius;
+            if (this.y - this.radius < 0) this.y = this.radius;
+
+            this.x += this.dx;
+            this.y += this.dy;
+        }
+    }
+
+    /**
+     * Resolves 2D elastic collision between two balls.
+     */
+    function resolveCollision(ball1, ball2) {
+        const xVelocityDiff = ball1.dx - ball2.dx;
+        const yVelocityDiff = ball1.dy - ball2.dy;
+        const xDist = ball2.x - ball1.x;
+        const yDist = ball2.y - ball1.y;
+
+        if (xVelocityDiff * xDist + yVelocityDiff * yDist >= 0) {
+            const angle = -Math.atan2(yDist, xDist);
+            const m1 = ball1.mass;
+            const m2 = ball2.mass;
+
+            const u1 = rotate({ x: ball1.dx, y: ball1.dy }, angle);
+            const u2 = rotate({ x: ball2.dx, y: ball2.dy }, angle);
+
+            const v1x = (u1.x * (m1 - m2) + 2 * m2 * u2.x) / (m1 + m2);
+            const v2x = (u2.x * (m2 - m1) + 2 * m1 * u1.x) / (m1 + m2);
+            const v1 = { x: v1x, y: u1.y };
+            const v2 = { x: v2x, y: u2.y };
+
+            const vFinal1 = rotate(v1, -angle);
+            const vFinal2 = rotate(v2, -angle);
+
+            ball1.dx = vFinal1.x;
+            ball1.dy = vFinal1.y;
+            ball2.dx = vFinal2.x;
+            ball2.dy = vFinal2.y;
+
+            if (collisionSoundEnabled && boopSynth) {
+                 // Vary pitch slightly based on ball size or a random factor
+                const pitch = ball1.radius > ball2.radius ? "E4" : "A4";
+                boopSynth.triggerAttackRelease(pitch, "16n", Tone.now(), 0.6); // Louder, shorter boop for ball collisions
+            }
+        }
+    }
+
+    function rotate(velocity, angle) {
+        return {
+            x: velocity.x * Math.cos(angle) - velocity.y * Math.sin(angle),
+            y: velocity.x * Math.sin(angle) + velocity.y * Math.cos(angle)
+        };
+    }
+
+    function separateOverlappingBalls(ball1, ball2, overlap, distance) {
+        if (distance === 0) {
+            ball1.x += (Math.random() - 0.5) * 0.1;
+            ball1.y += (Math.random() - 0.5) * 0.1;
+            return;
+        }
+        const dx = (ball1.x - ball2.x) / distance;
+        const dy = (ball1.y - ball2.y) / distance;
+        const displacement = overlap / 2 + 0.01; // Add a tiny bit extra to ensure separation
+        ball1.x += dx * displacement;
+        ball1.y += dy * displacement;
+        ball2.x -= dx * displacement;
+        ball2.y -= dy * displacement;
+    }
+
+    /**
+     * Sets up the balls with specified parameters.
+     */
+    function setupBalls(numRed, numBlack, radius) {
+        balls = [];
+        currentRedBalls = numRed;
+        currentBlackBalls = numBlack;
+        currentBallRadius = radius;
+
+        // Update modal inputs to reflect current state
+        numRedBallsInput.value = numRed;
+        numBlackBallsInput.value = numBlack;
+        ballSizeRange.value = radius;
+        ballSizeValueDisplay.textContent = radius;
+
+        const totalBalls = numRed + numBlack;
+        if (totalBalls === 0) return; // No balls to create
+
+        for (let i = 0; i < totalBalls; i++) {
+            let x, y, validPosition;
+            let attempts = 0; // Prevent infinite loop if canvas is too small for balls
+            do {
+                validPosition = true;
+                x = Math.random() * (canvas.width - 2 * currentBallRadius) + currentBallRadius;
+                y = Math.random() * (canvas.height - 2 * currentBallRadius) + currentBallRadius;
+                for (const ball of balls) {
+                    const dist = Math.hypot(x - ball.x, y - ball.y);
+                    if (dist < 2 * currentBallRadius + 2) { // +2 for a little extra spacing
+                        validPosition = false;
+                        break;
+                    }
+                }
+                attempts++;
+            } while (!validPosition && attempts < 100); // Try 100 times
+
+            if (attempts >= 100 && !validPosition) {
+                console.warn("Could not find a valid position for a ball. Canvas might be too crowded or ball size too large.");
+                // Optionally place it randomly anyway or skip
+            }
+
+            const speedMagnitude = (Math.random() * 2 + 1); // Speed between 1 and 3
+            const angle = Math.random() * 2 * Math.PI;
+            const dx = Math.cos(angle) * speedMagnitude;
+            const dy = Math.sin(angle) * speedMagnitude;
+            const color = i < numRed ? 'red' : 'black';
+            balls.push(new Ball(x, y, dx, dy, currentBallRadius, color));
+        }
+    }
+
+    function initRandomBalls() {
+        const numRed = Math.floor(Math.random() * 3) + 1;
+        const numBlack = Math.floor(Math.random() * 3) + 1;
+        // Keep currentBallRadius or randomize it too if desired
+        setupBalls(numRed, numBlack, currentBallRadius);
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < balls.length; i++) {
+            balls[i].update();
+            for (let j = i + 1; j < balls.length; j++) {
+                const ball1 = balls[i];
+                const ball2 = balls[j];
+                const dist = Math.hypot(ball1.x - ball2.x, ball1.y - ball2.y);
+                if (dist < ball1.radius + ball2.radius) {
+                    const overlap = ball1.radius + ball2.radius - dist;
+                    separateOverlappingBalls(ball1, ball2, overlap, dist);
+                    resolveCollision(ball1, ball2);
+                }
+            }
+            balls[i].draw();
+        }
+        animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function startAnimation() {
+        if (!animationFrameId) {
+            // Ensure Tone.js audio context is started by user gesture
+            if (Tone.context.state !== 'running') {
+                Tone.start().then(() => {
+                    console.log("AudioContext started by Tone.js");
+                }).catch(e => console.error("Error starting Tone.js AudioContext:", e));
+            }
+            animate();
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            resetButton.disabled = true;
+            configButton.disabled = true;
+        }
+    }
+
+    function stopAnimation() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            resetButton.disabled = false;
+            configButton.disabled = false;
+        }
+    }
+
+    function resetAndRandomizeAnimation() {
+        stopAnimation();
+        initRandomBalls();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (balls.length > 0) balls.forEach(ball => ball.draw());
+    }
+
+    function configureAndResetAnimation(numRed, numBlack, radius) {
+        stopAnimation();
+        setupBalls(numRed, numBlack, radius);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (balls.length > 0) balls.forEach(ball => ball.draw());
+    }
+
+    function handleResize() {
+        stopAnimation();
+        canvasWidth = window.innerWidth * 0.85;
+        canvasHeight = window.innerHeight * 0.65;
+        canvasWidth = Math.max(300, Math.min(canvasWidth, 1200));
+        canvasHeight = Math.max(200, Math.min(canvasHeight, 800));
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        configureAndResetAnimation(currentRedBalls, currentBlackBalls, currentBallRadius);
+        if (stopButton.disabled) {
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+             if (balls.length > 0) balls.forEach(ball => ball.draw());
+        }
+    }
+
+    // --- Modal Logic ---
+    function showModal() {
+        // Update modal with current values before showing
+        numRedBallsInput.value = currentRedBalls;
+        numBlackBallsInput.value = currentBlackBalls;
+        ballSizeRange.value = currentBallRadius;
+        ballSizeValueDisplay.textContent = currentBallRadius;
+        collisionSoundToggle.checked = collisionSoundEnabled;
+        // musicUrlInput.value is preserved
+
+        ballConfigModal.style.display = 'flex';
+    }
+
+    function hideModal() {
+        ballConfigModal.style.display = 'none';
+    }
+
+    ballSizeRange.addEventListener('input', (event) => {
+        ballSizeValueDisplay.textContent = event.target.value;
+    });
+
+    applyBallConfigButton.addEventListener('click', () => {
+        let numRed = parseInt(numRedBallsInput.value);
+        let numBlack = parseInt(numBlackBallsInput.value);
+        let newRadius = parseInt(ballSizeRange.value);
+
+        numRed = Math.max(0, Math.min(numRed, 10));
+        numBlack = Math.max(0, Math.min(numBlack, 10));
+        newRadius = Math.max(5, Math.min(newRadius, 50));
+
+        collisionSoundEnabled = collisionSoundToggle.checked;
+        // Music URL is handled by its own button/logic
+
+        configureAndResetAnimation(numRed, numBlack, newRadius);
+        hideModal();
+    });
+
+    closeModalButton.addEventListener('click', hideModal);
+
+    toggleMusicButton.addEventListener('click', () => {
+        if (isMusicPlaying) {
+            audioPlayer.pause();
+            toggleMusicButton.textContent = 'Play Music';
+        } else {
+            const musicURL = musicUrlInput.value.trim();
+            if (musicURL) {
+                // Ensure Tone.js audio context is started by user gesture
+                if (Tone.context.state !== 'running') {
+                    Tone.start().then(() => {
+                        console.log("AudioContext started for music playback");
+                        playMusic(musicURL);
+                    }).catch(e => {
+                        console.error("Error starting Tone.js AudioContext for music:", e);
+                        alert("Could not start audio. Please interact with the page (e.g., click Start) and try again.");
+                    });
+                } else {
+                    playMusic(musicURL);
+                }
+            } else {
+                alert("Please enter a music URL.");
+            }
+        }
+        isMusicPlaying = !isMusicPlaying;
+    });
+
+    function playMusic(url) {
+        try {
+            audioPlayer.src = url;
+            audioPlayer.play()
+                .then(() => {
+                    toggleMusicButton.textContent = 'Stop Music';
+                    console.log("Music playing from:", url);
+                })
+                .catch(error => {
+                    console.error("Error playing music:", error);
+                    alert("Could not play music. Check the URL and ensure it's a direct link to an audio file (e.g. mp3, wav) and allows cross-origin playback if hosted elsewhere.");
+                    toggleMusicButton.textContent = 'Play Music';
+                    isMusicPlaying = false; // Reset state
+                });
+        } catch (e) {
+            console.error("Error setting audio source:", e);
+            alert("Invalid music URL or format.");
+            toggleMusicButton.textContent = 'Play Music';
+            isMusicPlaying = false; // Reset state
+        }
+    }
+
+    audioPlayer.addEventListener('ended', () => {
+        toggleMusicButton.textContent = 'Play Music';
+        isMusicPlaying = false;
+    });
+
+
+    // Keyboard listeners
+    window.addEventListener('keydown', (event) => {
+        if (event.code === 'Space' && (document.activeElement !== numRedBallsInput && document.activeElement !== numBlackBallsInput && document.activeElement !== ballSizeRange && document.activeElement !== musicUrlInput)) {
+            event.preventDefault();
+            if (ballConfigModal.style.display === 'none' || ballConfigModal.style.display === '') {
+                showModal();
+            } else {
+                hideModal(); // Allow space to also close if open and not focused on input
+            }
+        } else if (event.key === 'Escape') {
+            if (ballConfigModal.style.display === 'flex') {
+                hideModal();
+            }
+        }
+    });
+
+    configButton.addEventListener('click', showModal); // Listener for the new button
+
+
+    // --- Initial Setup ---
+    initRandomBalls();
+    balls.forEach(ball => ball.draw());
+    ballSizeValueDisplay.textContent = currentBallRadius; // Set initial display for ball size
+</script>
+
+</body>
+</html>
