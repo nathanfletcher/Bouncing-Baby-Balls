@@ -189,7 +189,7 @@
 
         <div class="input-group">
             <label for="ballSizeRange">Ball Size (Radius: <span id="ballSizeValue">15</span>px):</label>
-            <input type="range" id="ballSizeRange" name="ballSizeRange" min="5" max="50" value="15">
+            <input type="range" id="ballSizeRange" name="ballSizeRange" min="5" max="150" value="15">
         </div>
 
         <div class="input-group checkbox-group">
@@ -238,7 +238,7 @@
     // --- Animation & Game State ---
     let animationFrameId;
     let balls = [];
-    let currentBallRadius = 42; // Default ball radius
+    let currentBallRadius = 95; // Default ball radius
     let canvasWidth = window.innerWidth * 0.85;
     let canvasHeight = window.innerHeight * 0.65;
 
@@ -573,7 +573,7 @@
 
         numRed = Math.max(0, Math.min(numRed, 10));
         numBlack = Math.max(0, Math.min(numBlack, 10));
-        newRadius = Math.max(5, Math.min(newRadius, 50));
+        newRadius = Math.max(5, Math.min(newRadius, 150));
 
         collisionSoundEnabled = collisionSoundToggle.checked;
         // Music URL is handled by its own button/logic
