@@ -167,11 +167,11 @@
 <canvas id="animationCanvas"></canvas>
 
 <div class="controls">
-    <button id="startButton">Start/Stop(Space)</button>
-    <button id="stopButton" disabled>Stop</button>
-    <button id="resetButton">Randomize</button>
-    <button id="configButton">Configure (Esc)</button> 
-    <button id="fullscreenButton">Full Screen</button></div>
+    <!-- <button id="startButton"></button> -->
+    <button id="stopButton" >Start / Stop ⏯️</button>
+    <button id="resetButton">Randomize </button>
+    <button id="configButton">Configure (Esc) 🔧</button> 
+    <button id="fullscreenButton">Full Screen </button></div>
 
 <div id="ballConfigModal" class="modal">
     <div class="modal-content">
@@ -217,7 +217,7 @@
     const ctx = canvas.getContext('2d');
 
     // --- DOM Elements ---
-    const startButton = document.getElementById('startButton');
+    // const startButton = document.getElementById('startButton');
     const stopButton = document.getElementById('stopButton');
     const resetButton = document.getElementById('resetButton');
     const configButton = document.getElementById('configButton'); // New button
@@ -238,7 +238,7 @@
     // --- Animation & Game State ---
     let animationFrameId;
     let balls = [];
-    let currentBallRadius = 25; // Default ball radius
+    let currentBallRadius = 42; // Default ball radius
     let canvasWidth = window.innerWidth * 0.85;
     let canvasHeight = window.innerHeight * 0.65;
 
@@ -467,10 +467,10 @@
                 }).catch(e => console.error("Error starting Tone.js AudioContext:", e));
             }
             animate();
-            startButton.disabled = true;
+            // startButton.disabled = true;
             stopButton.disabled = false;
             resetButton.disabled = true;
-            configButton.disabled = true;
+            configButton.disabled = false;
         }
     }
 
@@ -478,8 +478,8 @@
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
-            startButton.disabled = false;
-            stopButton.disabled = true;
+            // startButton.disabled = false;
+            stopButton.disabled = false;
             resetButton.disabled = false;
             configButton.disabled = false;
         }
@@ -531,7 +531,7 @@
         
         // If animation was stopped by this resize (or was already stopped and we're just re-drawing the initial state)
         // and the start button is available (meaning it wasn't running), redraw static.
-        if (startButton.disabled === false) { // Check if it was NOT running (stopButton.disabled would be true if it was running)
+        if (stopButton.disabled === false) { // Check if it was NOT running (stopButton.disabled would be true if it was running)
              
              ctx.clearRect(0, 0, canvas.width, canvas.height);
              if (balls.length > 0) balls.forEach(ball => ball.draw());
@@ -743,7 +743,7 @@
         }
     }
     // --- Event Listeners for Main Controls ---
-    startButton.addEventListener('click', startAnimation);
+    // startButton.addEventListener('click', startAnimation);
     stopButton.addEventListener('click', stopAnimation);
     resetButton.addEventListener('click', resetAndRandomizeAnimation);
     /* 
