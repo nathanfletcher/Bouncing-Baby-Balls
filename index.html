@@ -167,10 +167,10 @@
 <canvas id="animationCanvas"></canvas>
 
 <div class="controls">
-    <button id="startButton">Start</button>
+    <button id="startButton">Start/Stop(Space)</button>
     <button id="stopButton" disabled>Stop</button>
     <button id="resetButton">Randomize</button>
-    <button id="configButton">Configure (Space)</button> </div>
+    <button id="configButton">Configure (Esc)</button> </div>
 
 <div id="ballConfigModal" class="modal">
     <div class="modal-content">
@@ -254,15 +254,18 @@
     let isMusicPlaying = false;
     let boopSynth; // Will be initialized after Tone.js is ready
 
-    // Initialize Tone.js synth safely
-    if (typeof Tone !== 'undefined') {
-        boopSynth = new Tone.Synth({
+        // Initialize Tone.js synth safely
+        if (typeof Tone !== 'undefined') {
+        boopSynth = new Tone.PolySynth(Tone.Synth, { // Pass Tone.Synth constructor first
+            polyphony: 4, // Specify polyphony in the options object
             oscillator: { type: "sine" },
             envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.05 }
         }).toDestination();
     } else {
         console.warn("Tone.js not loaded. Collision sounds will be unavailable.");
     }
+
+
 
 
     /**
@@ -600,14 +603,22 @@
 
     // Keyboard listeners
     window.addEventListener('keydown', (event) => {
-        if (event.code === 'Space' && (document.activeElement !== numRedBallsInput && document.activeElement !== numBlackBallsInput && document.activeElement !== ballSizeRange && document.activeElement !== musicUrlInput)) {
+        if (event.code === 'Escape' && (document.activeElement !== numRedBallsInput && document.activeElement !== numBlackBallsInput && document.activeElement !== ballSizeRange && document.activeElement !== musicUrlInput)) {
             event.preventDefault();
             if (ballConfigModal.style.display === 'none' || ballConfigModal.style.display === '') {
                 showModal();
             } else {
                 hideModal(); // Allow space to also close if open and not focused on input
             }
-        } else if (event.key === 'Escape') {
+        // Space starts animation if not already running
+        } else if (event.code === 'Space' && !animationFrameId) {
+            event.preventDefault();
+            startAnimation();
+        // Space stops animation if running
+        } else if (event.code === 'Space' && animationFrameId) {
+            event.preventDefault();
+            stopAnimation();
+        } else if (event.key === 'Space') {
             if (ballConfigModal.style.display === 'flex') {
                 hideModal();
             }
