@@ -616,7 +616,19 @@
 
     configButton.addEventListener('click', showModal); // Listener for the new button
 
-
+    // --- Event Listeners for Main Controls ---
+    startButton.addEventListener('click', startAnimation);
+    stopButton.addEventListener('click', stopAnimation);
+    resetButton.addEventListener('click', resetAndRandomizeAnimation);
+    window.addEventListener('resize', handleResize);
+    // Ensure canvas is responsive on load
+    window.addEventListener('load', handleResize);
+    // Ensure canvas is responsive on resize
+    window.addEventListener('resize', handleResize);
+    // Ensure canvas is responsive on orientation change
+    window.addEventListener('orientationchange', handleResize);
+    // Ensure canvas is responsive on device rotation
+    window.addEventListener('deviceorientation', handleResize);
     // --- Initial Setup ---
     initRandomBalls();
     balls.forEach(ball => ball.draw());
