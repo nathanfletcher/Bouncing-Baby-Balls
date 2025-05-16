@@ -472,6 +472,9 @@
             resetButton.disabled = true;
             configButton.disabled = false;
         }
+        else {
+            stopAnimation();
+        }
     }
 
     function stopAnimation() {
@@ -743,8 +746,8 @@
         }
     }
     // --- Event Listeners for Main Controls ---
-    startButton.addEventListener('click', startAnimation);
-    stopButton.addEventListener('click', stopAnimation);
+    // startButton.addEventListener('click', startAnimation);
+    stopButton.addEventListener('click', startAnimation);
     resetButton.addEventListener('click', resetAndRandomizeAnimation);
     /* 
     window.addEventListener('resize', handleResize);
